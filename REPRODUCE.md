@@ -1,9 +1,12 @@
 # Reproduction
 
-Run commands from this repository root. Python 3.10 is recommended. The
-original run used Python 3.10.12, PyTorch 2.7.1+cu128, Transformers 4.48.3,
-NumPy 2.2.6, scikit-learn 1.7.2, and PyArrow 25.0.0. The requirements files
-pin the direct packages checked in the retained server environment.
+Run commands from the repository root. Sections 2 and 3 use Linux with Bash,
+a CUDA GPU and sufficient memory for Qwen2.5-7B. The original environment was
+Python 3.10.12, PyTorch 2.7.1+cu128, Transformers 4.48.3, NumPy 2.2.6,
+scikit-learn 1.7.2 and PyArrow 25.0.0. The original BM25 environment had a
+32 GiB host memory limit.
+
+## 1 Check the repository on CPU
 
 ```bash
 python -m pip install -r requirements.txt
@@ -11,132 +14,98 @@ python -m pytest -q
 python scripts/verify_release.py
 ```
 
-For training or Qwen scoring, install PyTorch 2.7.1 for the target CUDA runtime
-(cu128 for the original RTX 5090 environment), then install
-`requirements-gpu.txt`. BM25 construction also requires sufficient host RAM.
-The original server had a 32 GiB memory limit. The CPU tests use small fixtures.
-The verification script also recovers Accuracy and Macro-F1 for the three
-reported branches from published aggregate confusion matrices.
+The test suite uses small fixtures. The verification script checks archived
+configurations and the model scoring source, and recovers Accuracy and Macro-F1
+from the original aggregate confusion matrices. This verification requires no
+dataset download or GPU.
 
-## Data and models
+## 2 Install GPU dependencies and prepare the data
 
-Acquire `TrendFact.json` and `evidence.parquet` from the
-[TrendFact authors' dataset](https://huggingface.co/datasets/zxc123cc/TrendFact)
-(CC BY 4.0), placing them under `data/raw/TrendFact/`:
+For the original CUDA 12.8 runtime:
+
+```bash
+python -m pip install torch==2.7.1 --index-url https://download.pytorch.org/whl/cu128
+python -m pip install -r requirements-gpu.txt
+```
+
+Download the exact [TrendFact snapshot](https://huggingface.co/datasets/zxc123cc/TrendFact/tree/f0838d22138f341189602fb719998787875985fe)
+from the dataset authors (CC BY 4.0). The SHA-256 values in
+`configs/data_trendfact.yaml` identify the exact inputs.
 
 ```bash
 mkdir -p data/raw/TrendFact
-curl --fail --location --output data/raw/TrendFact/TrendFact.json \
-  https://huggingface.co/datasets/zxc123cc/TrendFact/resolve/main/TrendFact.json
-curl --fail --location --output data/raw/TrendFact/evidence.parquet \
-  https://huggingface.co/datasets/zxc123cc/TrendFact/resolve/main/evidence.parquet
+base=https://huggingface.co/datasets/zxc123cc/TrendFact/resolve/f0838d22138f341189602fb719998787875985fe
+curl --fail --location --output data/raw/TrendFact/TrendFact.json "$base/TrendFact.json"
+curl --fail --location --output data/raw/TrendFact/evidence.parquet "$base/evidence.parquet"
 python scripts/verify_release.py --raw
 python src/data/prepare_trendfact.py
+python scripts/verify_release.py --splits
 ```
 
-The SHA-256 values in `configs/data_trendfact.yaml` identify the exact inputs.
-If a download differs, recover the original snapshot before proceeding.
-The model configurations pin the upstream Hugging Face revisions of
-Qwen2.5-7B-Instruct and Chinese RoBERTa. Follow each model card's use and
-redistribution terms. This repository does not set a license for third-party
-texts or weights.
+The data builder creates six byte-checked split and query files. Inference and
+training code use the exact Hugging Face model revisions in the configuration
+files. Follow the original publishers' model and dataset terms.
 
-## Train and development
+## 3 Rebuild from public inputs
 
-The commands below preserve the original selection protocol. The deterministic
-data build also creates the test split for integrity checks. The training
-commands consume train and development queries only.
+Run the following in a fresh work directory after section 2. The release
+includes the original Gate's numerical parameters. This route regenerates the
+training evidence cache and retrains the three RoBERTa checkpoints on the
+documented training split. RoBERTa epoch selection uses the fixed 200-query
+pilot. The final fusion uses the archived 0.5 weight.
 
 ```bash
-python src/retrieval/run_trendfact_bm25_pilot.py
 python src/retrieval/run_trendfact_bm25_pilot.py \
   --queries-path data/processed/trendfact_v1/gate_train_queries.jsonl \
   --output-dir outputs/retrieval/trendfact_bm25_gate_train
-python src/retrieval/run_trendfact_bm25_pilot.py \
-  --queries-path data/processed/trendfact_v1/heldout_dev_queries.jsonl \
-  --output-dir outputs/retrieval/trendfact_bm25_heldout_dev \
-  --stored-top-k 20 --report-at-k 1 3 5 10 20
-for suffix in qwen25_7b gate_train_qwen25_7b heldout_dev_qwen25_7b; do
-  CUDA_VISIBLE_DEVICES=0 python src/retrieval/score_evidence_with_llm.py \
-    --config "configs/llm_evidence_pointwise_trendfact_${suffix}.yaml"
-done
-python src/evaluation/train_trendfact_candidate_gate.py \
-  --config configs/trendfact_candidate_reliability_gate.yaml
-for split in pilot heldout_dev; do
-  python src/evaluation/evaluate_trendfact_evidence_aggregator.py \
-    --evaluation-split "$split" \
-    --output-dir "outputs/evaluation/trendfact_evidence_aggregator/$split"
-done
+CUDA_VISIBLE_DEVICES=0 python src/retrieval/score_evidence_with_llm.py \
+  --config configs/llm_evidence_pointwise_trendfact_gate_train_qwen25_7b.yaml
 for seed in 13 42 2026; do
   CUDA_VISIBLE_DEVICES=0 python src/baselines/trendfact_transformer_baseline.py \
     --config "configs/trendfact_claim_roberta_seed${seed}.yaml" \
     --output-dir "outputs/baselines/trendfact_claim_roberta_seed${seed}"
 done
-python src/evaluation/evaluate_trendfact_roberta_evidence_ensemble.py \
-  --output-dir outputs/evaluation/trendfact_roberta_evidence_ensemble
-python src/evaluation/evaluate_trendfact_roberta_evidence_ablations.py \
-  --output-dir outputs/evaluation/trendfact_roberta_evidence_ablations
+bash scripts/reproduce_final.sh rebuilt
 ```
 
-The original query-level out-of-fold training can place related claims in
-different internal folds. The original 947-query development set also shared
-some related groups with the 200-query pilot. Those issues were subsequently
-audited. The released primary configuration preserves the originally reported
-method and evaluation history. Retraining can yield different model bytes and
-metrics, particularly across devices or library builds.
+The evaluator validates each rebuilt checkpoint against its training report,
+records checkpoint provenance, and writes a new completion manifest under
+`outputs/final/trendfact_one_shot_v1`. Rebuilt model bytes, generations and
+metrics can vary across environments. Compare the new results with the
+published historical values in `results/frozen_test.json`.
 
-## Original frozen evaluation
+## 4 Replay with the original artifacts
 
-The project already completed its one-shot test. The original results and
-recorded file hashes are retained in `results/frozen_test.json`. This release
-does not perform additional test inference during its checks. The historical
-sequence below is provided for independent reproduction in a fresh checkout.
-For exact checkpoint replay, obtain the three original checkpoints through
-the project maintainer and verify the paths, sizes and hashes declared in
-`configs/final_test_trendfact.yaml`. Place the bundled Gate at its historical
-path in a fresh replay workspace and retain the original train-stage candidate
-and Qwen artifacts for the evidence aggregator. Rebuilt caches must be treated
-as regenerated inputs unless their hashes match the original artifacts.
+Use a separate fresh workspace. After section 2, place the three original
+checkpoints and original evidence training artifacts at the paths declared in
+`configs/final_test_trendfact.yaml` and `assets/frozen_inputs.json`. These
+files can be obtained from the project maintainer, subject to availability
+and applicable terms. The two public dataset files come from section 2.
 
 ```bash
-mkdir -p outputs/reranking/trendfact/candidate_reliability_gate
-cp -n assets/candidate_gate.json outputs/reranking/trendfact/candidate_reliability_gate/model.json
-python scripts/verify_release.py --raw --checkpoints --training-cache
-python src/evaluation/validate_trendfact_final_freeze.py
-python src/evaluation/prepare_trendfact_final_test.py
-final=outputs/final/trendfact_one_shot_v1
-python src/retrieval/run_trendfact_bm25_pilot.py \
-  --queries-path "$final/data/test_queries.jsonl" \
-  --output-dir "$final/retrieval_bm25" --stored-top-k 20 --allow-final-test
-python src/retrieval/score_evidence_with_llm.py \
-  --config configs/final_test_trendfact_qwen.yaml --allow-final-test
-for seed in 13 42 2026; do
-  python src/baselines/predict_trendfact_frozen_roberta.py --seed "$seed" \
-    --queries-path "$final/data/test_queries.jsonl" \
-    --output-dir "$final/roberta_seed$seed" --device 0
-done
-python src/evaluation/evaluate_trendfact_evidence_aggregator.py \
-  --config configs/final_test_trendfact_evidence_aggregator.yaml \
-  --evaluation-split test --output-dir "$final/evidence_aggregator" --allow-final-test
-python src/evaluation/evaluate_trendfact_final_fusion.py \
-  --roberta-path "$final/roberta_seed13/test_predictions.jsonl" \
-  --roberta-path "$final/roberta_seed42/test_predictions.jsonl" \
-  --roberta-path "$final/roberta_seed2026/test_predictions.jsonl" \
-  --evidence-path "$final/evidence_aggregator/predictions.jsonl" \
-  --output-dir "$final/final_fusion"
-python src/evaluation/analyze_trendfact_dev_errors.py \
-  --config configs/final_test_trendfact_error_analysis.yaml \
-  --output-dir "$final/error_analysis" --allow-final-test
-python src/evaluation/finalize_trendfact_final_test.py
-mkdir -p outputs/evaluation/trendfact_roberta_evidence_ablations
-cp -n assets/dev_ablation_selection.json outputs/evaluation/trendfact_roberta_evidence_ablations/report.json
-python src/evaluation/evaluate_trendfact_final_ablations.py \
-  --output-dir outputs/evaluation/trendfact_final_preselected_ablations
+bash scripts/reproduce_final.sh frozen
 ```
 
-The last ablation command requires the byte-identical original development
-selection report at the path pinned by its configuration. In a workspace
-with regenerated development results, preserve them separately before
-restoring the original report from `assets/dev_ablation_selection.json`.
-The final configuration's pre-run status is part of its archived bytes.
-The completion manifest in `results/` records the completed historical run.
+The frozen mode enforces the recorded checkpoint sizes and SHA-256 values
+before running. Both modes verify the archived Gate and refuse to overwrite
+an existing final output directory. The archived selection report supplies
+the original development-selected weights for the component ablations.
+This workflow is for independent reproduction in a fresh checkout.
+
+## 5 Verify the candidate Gate training recipe
+
+For a component check in its own workspace, first prepare the data and
+generate the training evidence files as in sections 2 and 3. Then run:
+
+```bash
+python src/retrieval/run_trendfact_bm25_pilot.py
+CUDA_VISIBLE_DEVICES=0 python src/retrieval/score_evidence_with_llm.py \
+  --config configs/llm_evidence_pointwise_trendfact_qwen25_7b.yaml
+python src/evaluation/train_trendfact_candidate_gate.py \
+  --config configs/trendfact_candidate_reliability_gate.yaml
+```
+
+Compare its generated `model.json` with `assets/candidate_gate.json`. The
+original query-level out-of-fold training can place related claims in
+different folds. Related groups also intersected the pilot and the original
+947-query development set. These are limitations of the archived protocol.

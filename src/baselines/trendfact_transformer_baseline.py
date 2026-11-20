@@ -263,6 +263,7 @@ def run(
         "pilot_samples": len(pilot_rows),
         "heldout_dev_samples": len(heldout_rows),
         "best_epoch": best_epoch,
+        "checkpoint_sha256": file_sha256(staging / "best_state.pt"),
         "history": history,
         "metrics": metrics,
         "inputs": {

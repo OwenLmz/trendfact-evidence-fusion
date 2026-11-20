@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import sys
 from pathlib import Path
 
 import yaml
@@ -51,7 +52,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--raw", action="store_true", help="Check both upstream dataset files")
     parser.add_argument("--checkpoints", action="store_true", help="Check original RoBERTa weights")
+    parser.add_argument("--splits", action="store_true", help="Check all six derived dataset files")
     parser.add_argument("--training-cache", action="store_true", help="Check original evidence training inputs")
+    parser.add_argument("--rebuilt", action="store_true", help="Check locally rebuilt weights and cache presence")
     args = parser.parse_args()
     frozen_path = ROOT / "configs/final_test_trendfact.yaml"
     config = yaml.safe_load(frozen_path.read_text(encoding="utf-8"))
@@ -76,9 +79,22 @@ def main():
     if args.checkpoints:
         for entry in config["claim_model"]["checkpoints"]:
             verify(entry["path"], entry["sha256"], entry["bytes"])
+    if args.splits:
+        for path, sha in inputs["derived_data"].items():
+            verify(path, sha)
     if args.training_cache:
         for path, sha in inputs["evidence_training"].items():
             verify(path, sha)
+    if args.rebuilt:
+        sys.path.insert(0, str(ROOT / "src"))
+        from baselines.predict_trendfact_frozen_roberta import validate_checkpoint
+
+        for path in inputs["evidence_training"]:
+            if not (ROOT / path).is_file():
+                raise FileNotFoundError(f"Missing rebuilt training input: {path}")
+        for entry in config["claim_model"]["checkpoints"]:
+            validate_checkpoint(config, int(entry["seed"]), ROOT / entry["path"], retrained=True)
+            print(f"OK retrained {entry['path']}")
 
 
 if __name__ == "__main__":

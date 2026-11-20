@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import numpy as np
 import pytest
+import yaml
 
+from baselines import predict_trendfact_frozen_roberta as predictor
 from baselines.predict_trendfact_frozen_roberta import select_checkpoint
 from evaluation.evaluate_trendfact_evidence_aggregator import _align
 from evaluation.prepare_trendfact_final_test import build_test_queries
@@ -10,6 +15,52 @@ from evaluation.evaluate_trendfact_final_ablations import (
     fuse_probabilities,
     validate_preselected_alphas,
 )
+from retrieval.evidence import file_sha256
+
+
+def test_retrained_checkpoint_is_explicit_and_bound_to_training_report(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(predictor, "ROOT", tmp_path)
+    configs = tmp_path / "configs"
+    configs.mkdir()
+    inputs = {}
+    hashes = {}
+    for split in ("train", "pilot", "heldout_dev"):
+        path = tmp_path / f"{split}.jsonl"
+        path.write_bytes(b"{}\n")
+        inputs[split] = str(path)
+        hashes[f"{split}_sha256"] = file_sha256(path)
+    model = {"name": "base-model"}
+    training = {"epochs": 5}
+    (configs / "trendfact_claim_roberta_seed13.yaml").write_text(
+        yaml.safe_dump({"model": model, "training": training, "input": inputs}),
+        encoding="utf-8",
+    )
+    checkpoint = tmp_path / "best_state.pt"
+    checkpoint.write_bytes(b"original checkpoint fixture")
+    frozen = {"claim_model": {"checkpoints": [{
+        "seed": 13, "bytes": checkpoint.stat().st_size,
+        "sha256": file_sha256(checkpoint), "best_epoch": 5,
+    }]}}
+    assert predictor.validate_checkpoint(frozen, 13, checkpoint, retrained=False)[0] == 5
+    checkpoint.write_bytes(b"retrained checkpoint fixture")
+    with pytest.raises(ValueError, match="Frozen checkpoint"):
+        predictor.validate_checkpoint(frozen, 13, checkpoint, retrained=False)
+
+    report = {
+        "seed": 13, "model": model, "training": training, "inputs": hashes,
+        "best_epoch": 4, "checkpoint_sha256": file_sha256(checkpoint),
+        "selection_split": "frozen_pilot_dev_200",
+        "heldout_used_for_parameter_selection": False, "test_used": False,
+    }
+    checkpoint.with_name("report.json").write_text(json.dumps(report), encoding="utf-8")
+    assert predictor.validate_checkpoint(frozen, 13, checkpoint, retrained=True) == (
+        4, file_sha256(checkpoint)
+    )
+    checkpoint.write_bytes(b"unexpected replacement")
+    with pytest.raises(ValueError, match="documented training run"):
+        predictor.validate_checkpoint(frozen, 13, checkpoint, retrained=True)
 
 
 def test_final_query_adapter_preserves_test_split_and_stable_id() -> None:

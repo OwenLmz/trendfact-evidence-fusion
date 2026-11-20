@@ -27,5 +27,6 @@ This archive covers the adopted TrendFact pipeline and its original component
 checks. Source, configuration, tests, aggregate results and the Gate's numeric
 parameters are included. The data and base models are obtained separately from
 their original publishers. The original fine-tuned RoBERTa checkpoints have
-individual file hashes and need to be acquired separately for checkpoint-exact
-replay. See [data and model provenance](REPRODUCE.md#data-and-models).
+individual file hashes for checkpoint-exact replay. The reproduction guide
+also provides a public-input rebuild route that trains replacement
+checkpoints and regenerates the evidence training cache.

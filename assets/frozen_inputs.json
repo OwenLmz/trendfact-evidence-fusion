@@ -2,6 +2,14 @@
   "scoring_source": {
     "src/retrieval/score_evidence_with_llm.py": "f7c0dd68d43831d1827553f9e2278e3ded5ea5ef9150b737a4346477051eeb66"
   },
+  "derived_data": {
+    "data/processed/trendfact_v1/train.jsonl": "e4f97d1fe9d7d9f7cb921fbbf06cf422c640510e857bb57da11b424f0e3a96ae",
+    "data/processed/trendfact_v1/dev.jsonl": "b9955833b0fc7b37c5a16a08bd96b8c34030e3e186faa7feb8b5f2eadaa54e22",
+    "data/processed/trendfact_v1/test.jsonl": "957b415257f4c9e5df22c364b77f3f3dc15b4502f5dfce481613eac018576be0",
+    "data/processed/trendfact_v1/pilot_dev_queries.jsonl": "98dfbf5135db0e606e3249428c3f3fd40ab27af9b14b73aac6fba2c66ecd05e0",
+    "data/processed/trendfact_v1/gate_train_queries.jsonl": "583bdf3b60167d91d1c36c9c0491e3c947ad8d5ebad32295f58d983a9c6c0547",
+    "data/processed/trendfact_v1/heldout_dev_queries.jsonl": "7f85471dec8a24c638568036bb4aa753539b82de5f09b1ff47ef5516f63d95e4"
+  },
   "evidence_training": {
     "data/processed/trendfact_v1/gate_train_queries.jsonl": "583bdf3b60167d91d1c36c9c0491e3c947ad8d5ebad32295f58d983a9c6c0547",
     "outputs/retrieval/trendfact_bm25_gate_train/retrieval_candidates.jsonl": "feda7b6ee67b98aa3331cad1c4f6ad27910a5cfd1dada2ac64569fee3a1d0ad1",

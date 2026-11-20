@@ -39,6 +39,40 @@ def select_checkpoint(
     return selected[0]
 
 
+def validate_checkpoint(
+    config: Mapping[str, object], seed: int, path: Path, *, retrained: bool
+) -> tuple[int, str]:
+    model = config["claim_model"]
+    checkpoint = select_checkpoint(model["checkpoints"], seed)
+    checkpoint_sha = file_sha256(path)
+    if not retrained:
+        if path.stat().st_size != int(checkpoint["bytes"]) or checkpoint_sha != checkpoint["sha256"]:
+            raise ValueError("Frozen checkpoint size or SHA-256 mismatch")
+        return int(checkpoint["best_epoch"]), checkpoint_sha
+
+    report = json.loads(path.with_name("report.json").read_text(encoding="utf-8"))
+    training_config = yaml.safe_load(
+        (ROOT / f"configs/trendfact_claim_roberta_seed{seed}.yaml").read_text(encoding="utf-8")
+    )
+    expected_inputs = {
+        "train_sha256": file_sha256(_resolve(training_config["input"]["train"])),
+        "pilot_sha256": file_sha256(_resolve(training_config["input"]["pilot"])),
+        "heldout_dev_sha256": file_sha256(_resolve(training_config["input"]["heldout_dev"])),
+    }
+    if (
+        report["seed"] != seed
+        or report["model"] != training_config["model"]
+        or report["training"] != training_config["training"]
+        or report["inputs"] != expected_inputs
+        or report["checkpoint_sha256"] != checkpoint_sha
+        or report["selection_split"] != "frozen_pilot_dev_200"
+        or report["heldout_used_for_parameter_selection"] is not False
+        or report["test_used"] is not False
+    ):
+        raise ValueError("Retrained checkpoint does not match the documented training run")
+    return int(report["best_epoch"]), checkpoint_sha
+
+
 def run(
     config_path: Path,
     *,
@@ -46,6 +80,7 @@ def run(
     queries_path: Path,
     output_dir: Path,
     device_index: int = 0,
+    retrained: bool = False,
 ) -> dict[str, object]:
     import torch
     from torch.utils.data import DataLoader, Dataset
@@ -57,10 +92,7 @@ def run(
         raise ValueError("Final-test config is not in the frozen state")
     checkpoint = select_checkpoint(config["claim_model"]["checkpoints"], seed)
     checkpoint_path = _resolve(checkpoint["path"])
-    if checkpoint_path.stat().st_size != int(checkpoint["bytes"]):
-        raise ValueError("Frozen checkpoint size mismatch")
-    if file_sha256(checkpoint_path) != str(checkpoint["sha256"]):
-        raise ValueError("Frozen checkpoint SHA-256 mismatch")
+    best_epoch, checkpoint_sha = validate_checkpoint(config, seed, checkpoint_path, retrained=retrained)
     rows = _read_jsonl(queries_path.resolve())
     if {str(row["split"]) for row in rows} != {"test"}:
         raise ValueError("Frozen RoBERTa inference requires test queries only")
@@ -134,8 +166,9 @@ def run(
     report = {
         "experiment": config["experiment"],
         "seed": seed,
-        "best_epoch": int(checkpoint["best_epoch"]),
-        "checkpoint_sha256": file_sha256(checkpoint_path),
+        "best_epoch": best_epoch,
+        "checkpoint_sha256": checkpoint_sha,
+        "checkpoint_source": "retrained" if retrained else "original_frozen",
         "queries_sha256": file_sha256(queries_path.resolve()),
         "predictions_sha256": file_sha256(prediction_path),
         "metrics": _classification_metrics(label_array, predictions, label_names),
@@ -156,6 +189,7 @@ def main() -> None:
     parser.add_argument("--queries-path", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--device", type=int, default=0)
+    parser.add_argument("--retrained", action="store_true", help="Use a verified locally retrained checkpoint")
     args = parser.parse_args()
     print(
         json.dumps(
@@ -165,6 +199,7 @@ def main() -> None:
                 queries_path=args.queries_path,
                 output_dir=args.output_dir,
                 device_index=args.device,
+                retrained=args.retrained,
             ),
             ensure_ascii=False,
             indent=2,

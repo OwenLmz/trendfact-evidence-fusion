@@ -83,6 +83,12 @@ def finalize(config_path: Path = DEFAULT_CONFIG) -> dict[str, object]:
         raise ValueError("Final fusion used a different freeze config")
 
     hashes = {name: file_sha256(path) for name, path in paths.items()}
+    checkpoint_sources = {
+        str(seed): _read_json((output_root / f"roberta_seed{seed}/report.json")).get(
+            "checkpoint_source", "original_frozen"
+        )
+        for seed in (13, 42, 2026)
+    }
     report = {
         "experiment": config["experiment"],
         "status": "complete",
@@ -96,6 +102,7 @@ def finalize(config_path: Path = DEFAULT_CONFIG) -> dict[str, object]:
             "paired_fusion_vs_roberta_ensemble"
         ],
         "artifact_sha256": hashes,
+        "checkpoint_sources": checkpoint_sources,
         "test_used": True,
         "parameters_selected_on_test": False,
         "rerun_permitted": False,
