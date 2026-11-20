@@ -1,0 +1,44 @@
+experiment: trendfact_qwen25_7b_constrained_pointwise_rerank_heldout_dev_v1
+seed: 20260730
+
+input:
+  retrieval_path: outputs/retrieval/trendfact_bm25_heldout_dev/retrieval_candidates.jsonl
+  split: dev
+  candidate_top_k: 20
+  labels_visible: false
+
+output:
+  path: outputs/reranking/trendfact/qwen25_7b_pointwise/heldout_dev_top5.jsonl
+  manifest_path: outputs/reranking/trendfact/qwen25_7b_pointwise/heldout_dev_manifest.json
+  selected_top_k: 5
+
+model:
+  name_or_path: Qwen/Qwen2.5-7B-Instruct
+  revision: fe11104b620d588ccc049ff6631dd3ea002e3d98
+  license: apache-2.0
+  trust_remote_code: false
+  torch_dtype: bfloat16
+  device_map: auto
+  attn_implementation: sdpa
+
+inference:
+  query_batch_size: 8
+  pair_batch_size: 16
+  max_input_tokens: 1536
+  max_new_tokens: 96
+  do_sample: false
+
+prompt:
+  version: trendfact_evidence_pointwise_zh_v1_fewshot
+  excerpt_method: query_character_bigram_window_v1
+  max_candidate_chars: 600
+  excerpt_overlap_chars: 200
+  allowed_relevance_scores: [0, 1, 2, 3]
+  allowed_stances: [support, refute, context, unknown]
+  reason_max_chinese_chars: 40
+
+protocol:
+  may_generate_evidence: false
+  may_use_target_label: false
+  may_predict_final_class: false
+  task: independently_score_fixed_top20_on_frozen_heldout_dev

@@ -1,0 +1,200 @@
+{
+  "experiment": "trendfact_one_shot_final_test_v1",
+  "status": "complete",
+  "freeze_config_sha256": "8abc68c096b188f103766c31438a32c51f8a1919e390cccae316e70d87d64656",
+  "row_counts": {
+    "queries": 1150,
+    "bm25": 1150,
+    "qwen": 1150,
+    "roberta_seed13": 1150,
+    "roberta_seed42": 1150,
+    "roberta_seed2026": 1150,
+    "evidence": 1150,
+    "final": 1150
+  },
+  "qwen_pairs": 23000,
+  "qwen_parse_errors": 3,
+  "changed_cases": 302,
+  "metrics": {
+    "roberta_seeds": [
+      {
+        "samples": 1150,
+        "accuracy": 0.514783,
+        "macro_f1": 0.463102,
+        "per_class": {
+          "support": {
+            "precision": 0.439732,
+            "recall": 0.619497,
+            "f1": 0.51436,
+            "support": 318
+          },
+          "refute": {
+            "precision": 0.692308,
+            "recall": 0.508172,
+            "f1": 0.586118,
+            "support": 673
+          },
+          "nei": {
+            "precision": 0.254808,
+            "recall": 0.333333,
+            "f1": 0.288828,
+            "support": 159
+          }
+        }
+      },
+      {
+        "samples": 1150,
+        "accuracy": 0.501739,
+        "macro_f1": 0.453526,
+        "per_class": {
+          "support": {
+            "precision": 0.457219,
+            "recall": 0.537736,
+            "f1": 0.49422,
+            "support": 318
+          },
+          "refute": {
+            "precision": 0.686508,
+            "recall": 0.514116,
+            "f1": 0.587935,
+            "support": 673
+          },
+          "nei": {
+            "precision": 0.220588,
+            "recall": 0.377358,
+            "f1": 0.278422,
+            "support": 159
+          }
+        }
+      },
+      {
+        "samples": 1150,
+        "accuracy": 0.474783,
+        "macro_f1": 0.437904,
+        "per_class": {
+          "support": {
+            "precision": 0.395221,
+            "recall": 0.676101,
+            "f1": 0.49884,
+            "support": 318
+          },
+          "refute": {
+            "precision": 0.712435,
+            "recall": 0.408618,
+            "f1": 0.519358,
+            "support": 673
+          },
+          "nei": {
+            "precision": 0.254545,
+            "recall": 0.352201,
+            "f1": 0.295515,
+            "support": 159
+          }
+        }
+      }
+    ],
+    "roberta_probability_ensemble": {
+      "samples": 1150,
+      "accuracy": 0.51913,
+      "macro_f1": 0.464843,
+      "per_class": {
+        "support": {
+          "precision": 0.448889,
+          "recall": 0.63522,
+          "f1": 0.526042,
+          "support": 318
+        },
+        "refute": {
+          "precision": 0.699187,
+          "recall": 0.511144,
+          "f1": 0.590558,
+          "support": 673
+        },
+        "nei": {
+          "precision": 0.245192,
+          "recall": 0.320755,
+          "f1": 0.277929,
+          "support": 159
+        }
+      }
+    },
+    "evidence_only": {
+      "samples": 1150,
+      "accuracy": 0.52,
+      "macro_f1": 0.451498,
+      "per_class": {
+        "support": {
+          "precision": 0.461916,
+          "recall": 0.591195,
+          "f1": 0.518621,
+          "support": 318
+        },
+        "refute": {
+          "precision": 0.79015,
+          "recall": 0.548291,
+          "f1": 0.647368,
+          "support": 673
+        },
+        "nei": {
+          "precision": 0.148551,
+          "recall": 0.257862,
+          "f1": 0.188506,
+          "support": 159
+        }
+      }
+    },
+    "roberta_evidence_fusion": {
+      "samples": 1150,
+      "accuracy": 0.578261,
+      "macro_f1": 0.507628,
+      "per_class": {
+        "support": {
+          "precision": 0.510204,
+          "recall": 0.707547,
+          "f1": 0.592885,
+          "support": 318
+        },
+        "refute": {
+          "precision": 0.776238,
+          "recall": 0.582467,
+          "f1": 0.665535,
+          "support": 673
+        },
+        "nei": {
+          "precision": 0.235294,
+          "recall": 0.301887,
+          "f1": 0.264463,
+          "support": 159
+        }
+      }
+    }
+  },
+  "paired_fusion_vs_roberta_ensemble": {
+    "metric": "macro_f1",
+    "difference": 0.042785,
+    "ci95": [
+      0.013281,
+      0.071124
+    ],
+    "bootstrap_samples": 2000
+  },
+  "artifact_sha256": {
+    "queries": "c15e20708833ef73c2fb193bbd526800a2e6c6b6d38cbed890153d3d56116757",
+    "bm25": "d93109489993416303d59a67b4a464833b23578dab5b5875f8aa97f3314c6d64",
+    "bm25_metrics": "fa7d63bb6e2d36b82749e449f6282266c05fb13ad2ca135eb9ed7af215ea0300",
+    "qwen": "edd566d65307a7c8513b1da30165d21c28c56fc66b55295474666fa0c45972f9",
+    "qwen_manifest": "dc4b8d53afecd4f4dbcb3aa8ac3a35ea5def9a4524707c1da38b34f98b0f3565",
+    "roberta_seed13": "c8295547597077c957b44793d069fb85735bef24d6c606f59416d1751bf764dd",
+    "roberta_seed42": "c318210fde56b806b68081d1f89fec3ee8c810024c683a9650354342b0c02088",
+    "roberta_seed2026": "446be9e92619bf6184ac6c0cc66e5247e2376599379422469b84b3e5a713bfca",
+    "evidence": "6c81b65e90fee3f2a818081ff2fb5583e0d3cf299c59c04407543b707affabd7",
+    "evidence_report": "1e976669e3cc1c88df4620691bd85cbd8d9583ca55d63123c1b15e0f9c53fc7e",
+    "final": "9977d3ac7c066a878ef4671254ef011a20a100242802dd980789b82b8fb50017",
+    "final_report": "e80bcafa4d8aa2866b72213a34be40a65c5dcc2326b6bb98ba21b3ebe85d3b2e",
+    "error_analysis": "a12989fe9d88db07a7c9ffdacd8613f669ba850d42df58b6fee80288ecffe72e",
+    "changed_cases": "b42ecfa4938e86b803b0773acf2de7eb080aca9afee63247fde907f55abbbd71"
+  },
+  "test_used": true,
+  "parameters_selected_on_test": false,
+  "rerun_permitted": false
+}

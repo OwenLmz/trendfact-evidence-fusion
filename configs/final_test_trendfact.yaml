@@ -1,0 +1,122 @@
+experiment: trendfact_one_shot_final_test_v1
+status: frozen_not_run
+frozen_at: '2026-07-30'
+
+dataset:
+  name: TrendFact
+  split_protocol: deterministic_derived_nonofficial
+  labels: [support, refute, nei]
+  test_path: data/processed/trendfact_v1/test.jsonl
+  test_rows: 1150
+  test_sha256: 957b415257f4c9e5df22c364b77f3f3dc15b4502f5dfce481613eac018576be0
+  test_text_viewed_for_model_selection: false
+
+evidence:
+  parquet_path: data/raw/TrendFact/evidence.parquet
+  rows: 366634
+  sha256: 89dafe0d48152c0ba2f3be6879b62372005202ae44f4f9520cb416be2a5a3345
+  retrieval:
+    method: character_bigram_bm25
+    k1: 1.5
+    b: 0.75
+    candidate_top_k: 20
+  qwen:
+    model: Qwen/Qwen2.5-7B-Instruct
+    revision: fe11104b620d588ccc049ff6631dd3ea002e3d98
+    source_config: configs/llm_evidence_pointwise_trendfact_heldout_dev_qwen25_7b.yaml
+    source_config_sha256: 799df38c460a382f4dde474dfd7a3262ce3ad28daed3d30536fb18b82786b506
+    prompt_version: trendfact_evidence_pointwise_zh_v1_fewshot
+    candidate_window_chars: 600
+    selected_top_k: 5
+    do_sample: false
+    reads_claim_label: false
+    reads_gold_target_idx: false
+    predicts_final_class: false
+  candidate_gate:
+    model_path: outputs/reranking/trendfact/candidate_reliability_gate/model.json
+    model_sha256: d004b4874c2591a21bd5e2a0be12ca583e9334f9aa752846cdd0e449051c9670
+    feature_set: full_candidate_reliability_gate
+
+claim_model:
+  name: hfl/chinese-roberta-wwm-ext
+  revision: 5c58d0b8ec1d9014354d691c538661bf00bfdb44
+  max_length: 128
+  class_balanced_loss: true
+  checkpoints:
+    - seed: 13
+      best_epoch: 5
+      path: outputs/baselines/trendfact_claim_roberta_seed13/best_state.pt
+      bytes: 409145626
+      sha256: 39eb95d2c1e007daa188cd0e52f855d20e7f4a0447baaa9bc90a83bad2147d33
+    - seed: 42
+      best_epoch: 5
+      path: outputs/baselines/trendfact_claim_roberta_seed42/best_state.pt
+      bytes: 409145626
+      sha256: fa244be5d8e3de9c1d00b29ddccb0313e6ceed14598c52ba8351d95f641e30ec
+    - seed: 2026
+      best_epoch: 2
+      path: outputs/baselines/trendfact_claim_roberta_seed2026/best_state.pt
+      bytes: 409145626
+      sha256: c981fdc55a8483242588de2ca9fbb3725570ed8889c8f3deee69d244057a17de
+  combination: mean_softmax_probability_across_three_seeds
+
+evidence_aggregator:
+  source_config: configs/trendfact_evidence_aggregator.yaml
+  source_config_sha256: 3001defb904a36f80179d93bfd7d995c097f0928d0d2861af9262761bd0e4115
+  train_samples: 600
+  top_k: 5
+  method: evidence_only_calibrated_aggregator
+
+decision_fusion:
+  evidence_alpha: 0.5
+  selected_on: frozen_pilot_dev_200
+  formula: (1-alpha)*roberta_probability_ensemble+alpha*evidence_probability
+
+output:
+  root: outputs/final/trendfact_one_shot_v1
+  allow_overwrite: false
+  save_retrieval_top20: true
+  save_qwen_top5: true
+  save_component_probabilities: true
+  save_final_predictions: true
+
+protocol:
+  configuration_frozen: true
+  dry_run_only_before_explicit_final_execution: true
+  test_used_before_freeze: false
+  test_may_be_run_once: true
+  test_may_change_prompt: false
+  test_may_change_gate: false
+  test_may_change_alpha: false
+  test_may_change_epoch: false
+  test_may_select_seed: false
+  test_may_select_method: false
+
+local_artifacts:
+  - path: configs/data_trendfact.yaml
+    sha256: a36a4ce467e0cc54f3edef08dcd91f00e40ef7cc3f0dbfc6e64b64f790a51525
+  - path: data/processed/trendfact_v1/train.jsonl
+    sha256: e4f97d1fe9d7d9f7cb921fbbf06cf422c640510e857bb57da11b424f0e3a96ae
+  - path: data/processed/trendfact_v1/test.jsonl
+    sha256: 957b415257f4c9e5df22c364b77f3f3dc15b4502f5dfce481613eac018576be0
+  - path: outputs/reranking/trendfact/candidate_reliability_gate/model.json
+    sha256: d004b4874c2591a21bd5e2a0be12ca583e9334f9aa752846cdd0e449051c9670
+  - path: configs/final_test_trendfact_qwen.yaml
+    sha256: e7ec329e459f5983a4a476be096d3e141820daaf25b51921179ebe4d9a80c122
+  - path: configs/final_test_trendfact_evidence_aggregator.yaml
+    sha256: f9c7ea4a5f40f9acbf3504d775356e6604f3e99a7af88b13ee440464ea9ff062
+  - path: configs/llm_evidence_pointwise_trendfact_heldout_dev_qwen25_7b.yaml
+    sha256: 799df38c460a382f4dde474dfd7a3262ce3ad28daed3d30536fb18b82786b506
+  - path: configs/trendfact_evidence_aggregator.yaml
+    sha256: 3001defb904a36f80179d93bfd7d995c097f0928d0d2861af9262761bd0e4115
+
+forbidden_after_freeze:
+  - inspect_test_examples_for_method_design
+  - tune_on_test_metrics
+  - change_candidate_pool
+  - change_prompt_or_qwen_revision
+  - change_gate_features_or_model
+  - change_evidence_top_k
+  - change_roberta_epoch_or_seed_set
+  - change_fusion_alpha
+  - replace_primary_method_after_test

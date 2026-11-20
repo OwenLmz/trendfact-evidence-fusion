@@ -1,0 +1,13 @@
+/.venv*/
+/.pytest_cache/
+__pycache__/
+*.py[cod]
+/.env*
+/data/
+/outputs/
+/models/
+/checkpoints/
+*.pt
+*.bin
+*.safetensors
+*.parquet

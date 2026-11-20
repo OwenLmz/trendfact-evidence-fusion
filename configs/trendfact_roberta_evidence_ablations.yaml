@@ -1,0 +1,41 @@
+experiment: trendfact_roberta_evidence_component_ablations_v1
+seed: 20260730
+
+labels: [support, refute, nei]
+
+input:
+  pilot:
+    roberta_predictions:
+      - outputs/baselines/trendfact_claim_roberta_seed13/pilot_predictions.jsonl
+      - outputs/baselines/trendfact_claim_roberta_seed42/pilot_predictions.jsonl
+      - outputs/baselines/trendfact_claim_roberta_seed2026/pilot_predictions.jsonl
+    evidence_predictions: outputs/evaluation/trendfact_evidence_aggregator/pilot/predictions.jsonl
+  heldout_dev:
+    roberta_predictions:
+      - outputs/baselines/trendfact_claim_roberta_seed13/heldout_dev_predictions.jsonl
+      - outputs/baselines/trendfact_claim_roberta_seed42/heldout_dev_predictions.jsonl
+      - outputs/baselines/trendfact_claim_roberta_seed2026/heldout_dev_predictions.jsonl
+    evidence_predictions: outputs/evaluation/trendfact_evidence_aggregator/heldout_dev/predictions.jsonl
+
+fusion:
+  primary_evidence_method: evidence_only_calibrated_aggregator
+  evidence_methods:
+    - non_llm_structural_aggregator
+    - direct_qwen_no_gate_aggregator
+    - evidence_only_calibrated_aggregator
+  alpha_grid: [0.0, 0.25, 0.5, 0.75, 1.0]
+  tie_break: prefer_lower_evidence_alpha
+  roberta_combination: mean_softmax_probability_across_three_seeds
+
+evaluation:
+  bootstrap_samples: 2000
+  selection_split: frozen_pilot_dev_200
+  heldout_dev_samples: 947
+  test_used: false
+
+protocol:
+  post_hoc_after_independent_component_heldout_results: true
+  alpha_selected_only_on_pilot: true
+  component_models_retrained: false
+  heldout_used_for_parameter_selection: false
+  test_used: false

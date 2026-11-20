@@ -1,0 +1,10 @@
+{
+  "scoring_source": {
+    "src/retrieval/score_evidence_with_llm.py": "f7c0dd68d43831d1827553f9e2278e3ded5ea5ef9150b737a4346477051eeb66"
+  },
+  "evidence_training": {
+    "data/processed/trendfact_v1/gate_train_queries.jsonl": "583bdf3b60167d91d1c36c9c0491e3c947ad8d5ebad32295f58d983a9c6c0547",
+    "outputs/retrieval/trendfact_bm25_gate_train/retrieval_candidates.jsonl": "feda7b6ee67b98aa3331cad1c4f6ad27910a5cfd1dada2ac64569fee3a1d0ad1",
+    "outputs/reranking/trendfact/qwen25_7b_pointwise/gate_train_top5.jsonl": "56676a21be4d711dd553faad3882ed91c3c1fb0e817521a9a3f05ae8bec20b9b"
+  }
+}

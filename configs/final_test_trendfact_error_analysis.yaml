@@ -1,0 +1,19 @@
+experiment: trendfact_one_shot_final_test_error_analysis_v1
+
+labels: [support, refute, nei]
+
+input:
+  queries: outputs/final/trendfact_one_shot_v1/data/test_queries.jsonl
+  roberta_predictions:
+    - outputs/final/trendfact_one_shot_v1/roberta_seed13/test_predictions.jsonl
+    - outputs/final/trendfact_one_shot_v1/roberta_seed42/test_predictions.jsonl
+    - outputs/final/trendfact_one_shot_v1/roberta_seed2026/test_predictions.jsonl
+  fusion_predictions: outputs/final/trendfact_one_shot_v1/final_fusion/predictions.jsonl
+  fusion_prediction_format: final
+  primary_method: evidence_only_calibrated_aggregator
+
+analysis:
+  claim_length_bins: [20, 40, 60]
+  gold_evidence_count_bins: [1, 2, 3, 4]
+  use_for_model_selection: false
+  test_used: true

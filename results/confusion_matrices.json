@@ -1,0 +1,11 @@
+{
+  "labels": ["support", "refute", "nei"],
+  "split": "original_frozen_test",
+  "rows": "reference labels",
+  "columns": "predicted labels",
+  "matrices": {
+    "roberta_probability_ensemble": [[202, 90, 26], [198, 344, 131], [50, 58, 51]],
+    "evidence_only": [[188, 50, 80], [149, 369, 155], [70, 48, 41]],
+    "roberta_evidence_fusion": [[225, 55, 38], [163, 392, 118], [53, 58, 48]]
+  }
+}

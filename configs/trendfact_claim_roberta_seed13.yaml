@@ -1,0 +1,34 @@
+experiment: trendfact_full_train_claim_only_roberta_balanced_seed13_v1
+seed: 13
+
+labels: [support, refute, nei]
+
+input:
+  train: data/processed/trendfact_v1/train.jsonl
+  pilot: data/processed/trendfact_v1/pilot_dev_queries.jsonl
+  heldout_dev: data/processed/trendfact_v1/heldout_dev_queries.jsonl
+
+model:
+  name: hfl/chinese-roberta-wwm-ext
+  revision: 5c58d0b8ec1d9014354d691c538661bf00bfdb44
+  device: 0
+  max_length: 128
+
+training:
+  epochs: 5
+  batch_size: 64
+  eval_batch_size: 128
+  learning_rate: 2.0e-5
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  loss_class_weighting: balanced
+  selection_metric: macro_f1
+  fp16: true
+
+protocol:
+  uses_all_derived_train_rows: true
+  train_samples: 5345
+  selection_split: frozen_pilot_dev_200
+  heldout_used_for_parameter_selection: false
+  evidence_used: false
+  test_used: false

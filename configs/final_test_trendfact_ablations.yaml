@@ -1,0 +1,37 @@
+experiment: trendfact_final_preselected_component_ablations_v1
+seed: 20260730
+
+labels: [support, refute, nei]
+
+input:
+  roberta_predictions:
+    - outputs/final/trendfact_one_shot_v1/roberta_seed13/test_predictions.jsonl
+    - outputs/final/trendfact_one_shot_v1/roberta_seed42/test_predictions.jsonl
+    - outputs/final/trendfact_one_shot_v1/roberta_seed2026/test_predictions.jsonl
+  evidence_predictions: outputs/final/trendfact_one_shot_v1/evidence_aggregator/predictions.jsonl
+  dev_selection_report: outputs/evaluation/trendfact_roberta_evidence_ablations/report.json
+  dev_selection_report_sha256: 0be6723e22dc1285c03bc2020694ca19f9195f0e6aa8be7c4043accd916514b2
+
+fusion:
+  primary_evidence_method: evidence_only_calibrated_aggregator
+  evidence_methods:
+    - non_llm_structural_aggregator
+    - direct_qwen_no_gate_aggregator
+    - evidence_only_calibrated_aggregator
+  expected_preselected_alphas:
+    non_llm_structural_aggregator: 0.5
+    direct_qwen_no_gate_aggregator: 0.25
+    evidence_only_calibrated_aggregator: 0.5
+  roberta_combination: mean_softmax_probability_across_three_seeds
+
+evaluation:
+  split: test
+  samples: 1150
+  bootstrap_samples: 2000
+
+protocol:
+  alphas_selected_on: frozen_pilot_dev_200
+  alphas_selected_before_test: true
+  parameters_selected_on_test: false
+  test_predictions_regenerated: false
+  primary_test_result_changed: false

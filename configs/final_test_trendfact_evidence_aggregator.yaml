@@ -1,0 +1,52 @@
+experiment: trendfact_evidence_aware_three_class_final_test_v1
+seed: 20260730
+
+labels: [support, refute, nei]
+
+input:
+  train:
+    queries: data/processed/trendfact_v1/gate_train_queries.jsonl
+    bm25: outputs/retrieval/trendfact_bm25_gate_train/retrieval_candidates.jsonl
+    qwen: outputs/reranking/trendfact/qwen25_7b_pointwise/gate_train_top5.jsonl
+  test:
+    queries: outputs/final/trendfact_one_shot_v1/data/test_queries.jsonl
+    bm25: outputs/final/trendfact_one_shot_v1/retrieval_bm25/retrieval_candidates.jsonl
+    qwen: outputs/final/trendfact_one_shot_v1/qwen/test_top5.jsonl
+
+candidate_gate:
+  model_json: outputs/reranking/trendfact/candidate_reliability_gate/model.json
+  candidate_top_k: 20
+  c: 1.0
+  max_iter: 2000
+
+aggregation:
+  top_k: 5
+  c: 1.0
+  max_iter: 3000
+
+claim_model:
+  type: character_tfidf_linear_svm
+  ngram_range: [2, 5]
+  min_df: 2
+  max_features: 50000
+  c: 1.0
+
+training:
+  split: frozen_balanced_train_subset
+  samples: 600
+  folds: 5
+  gate_scores_for_aggregator: query_level_out_of_fold
+  claim_scores_for_fusion: query_level_out_of_fold
+
+evaluation:
+  model_selection_split: frozen_pilot_dev_200
+  final_split: one_shot_test_1150
+  bootstrap_samples: 2000
+  test_used: true
+
+protocol:
+  qwen_reads_claim_label: false
+  qwen_reads_gold_target_idx: false
+  qwen_generates_evidence: false
+  evidence_candidates_fixed_by_bm25_top20: true
+  test_used_for_parameter_selection: false

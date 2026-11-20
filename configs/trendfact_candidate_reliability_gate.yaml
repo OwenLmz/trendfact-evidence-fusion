@@ -1,0 +1,32 @@
+experiment: trendfact_candidate_level_reliability_gate_v1
+seed: 20260730
+
+input:
+  train_queries: data/processed/trendfact_v1/gate_train_queries.jsonl
+  train_bm25: outputs/retrieval/trendfact_bm25_gate_train/retrieval_candidates.jsonl
+  train_qwen: outputs/reranking/trendfact/qwen25_7b_pointwise/gate_train_top5.jsonl
+  dev_queries: data/processed/trendfact_v1/pilot_dev_queries.jsonl
+  dev_bm25: outputs/retrieval/trendfact_bm25_pilot/retrieval_candidates.jsonl
+  dev_qwen: outputs/reranking/trendfact/qwen25_7b_pointwise/pilot_dev_top5.jsonl
+
+model:
+  type: candidate_level_standardized_logistic_regression
+  c: 1.0
+  class_weight: balanced
+  max_iter: 2000
+  candidate_top_k: 20
+  output_top_k: 5
+
+output:
+  directory: outputs/reranking/trendfact/candidate_reliability_gate
+  report: report.json
+  model: model.json
+  dev_rankings: dev_candidate_gate_top5.jsonl
+
+protocol:
+  fit_on_train_gold_evidence_only: true
+  dev_is_held_out: true
+  claim_veracity_label_is_feature: false
+  test_used: false
+  may_generate_evidence: false
+  ranks_only_fixed_bm25_top20: true

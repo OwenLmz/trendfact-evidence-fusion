@@ -1,0 +1,69 @@
+experiment: trendfact_constrained_reranking_protocol_v1
+seed: 20260730
+
+input:
+  dataset_json: data/raw/TrendFact/TrendFact.json
+  dataset_json_url: https://huggingface.co/datasets/zxc123cc/TrendFact/resolve/main/TrendFact.json
+  dataset_json_sha256: 8ceece813c8e4ab790b75e3754e049cbde9195c0d020d2d7b618824018464acc
+  evidence_parquet: data/raw/TrendFact/evidence.parquet
+  evidence_parquet_url: https://huggingface.co/datasets/zxc123cc/TrendFact/resolve/main/evidence.parquet
+  evidence_parquet_sha256: 89dafe0d48152c0ba2f3be6879b62372005202ae44f4f9520cb416be2a5a3345
+  expected_dataset_rows: 7643
+  expected_evidence_rows: 366634
+  official_repository: https://github.com/zxc123cc/TrendFact
+  official_dataset_page: https://huggingface.co/datasets/zxc123cc/TrendFact
+  official_paper: https://aclanthology.org/2026.acl-long.1219/
+  license: CC-BY-4.0
+
+labels:
+  0: support
+  1: refute
+  2: nei
+
+protocol:
+  official_split_available: false
+  official_retrieval_benchmark_uses_all_rows: true
+  derived_supervised_split: true
+  split_method: deterministic-label-balanced-evidence-and-near-duplicate-group-split
+  train_ratio: 0.70
+  dev_ratio: 0.15
+  test_ratio: 0.15
+  near_duplicate_threshold: 0.92
+  nearest_neighbors: 12
+  group_shared_gold_target_idx: true
+  raw_structural_examples_viewed_before_split: 2
+  test_used_for_model_selection: false
+
+pilot:
+  split: dev
+  query_count: 200
+  selection: deterministic-label-balanced-hash
+  stored_top_k: 100
+  report_at_k: [1, 3, 5, 10, 20, 50, 100]
+  bm25:
+    tokenizer: character_bigram
+    k1: 1.5
+    b: 0.75
+    use_publish_date: false
+  acceptance:
+    any_gold_recall_at_100: 0.70
+    any_gold_recall_at_20: 0.35
+
+gate_training:
+  split: train
+  query_count: 600
+  selection: deterministic-label-balanced-hash
+  purpose: train_query_level_reliability_gate
+
+heldout_evaluation:
+  split: dev
+  selection: all_dev_rows_excluding_frozen_200_query_pilot
+  expected_query_count: 947
+  test_used: false
+
+output:
+  data_dir: data/processed/trendfact_v1
+  audit_dir: outputs/dataset_screening/trendfact
+  pilot_dir: outputs/retrieval/trendfact_bm25_pilot
+  gate_train_retrieval_dir: outputs/retrieval/trendfact_bm25_gate_train
+  heldout_dev_retrieval_dir: outputs/retrieval/trendfact_bm25_heldout_dev
