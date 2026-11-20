@@ -32,7 +32,7 @@ from retrieval.rerank_evidence_with_llm import (  # noqa: E402
 )
 
 
-DEFAULT_CONFIG = ROOT / "configs" / "llm_evidence_pointwise_qwen25_7b.yaml"
+DEFAULT_CONFIG = ROOT / "configs" / "llm_evidence_pointwise_trendfact_qwen25_7b.yaml"
 STANCE_PRIORITY = {"support": 0, "refute": 0, "context": 1, "unknown": 2}
 
 

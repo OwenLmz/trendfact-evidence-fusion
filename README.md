@@ -1,4 +1,4 @@
-# TrendFact evidence-assisted fact checking
+# Evidence Fusion for Chinese Fact-Checking
 
 The frozen pipeline retrieves 20 candidates with character-bigram BM25, scores
 them with Qwen2.5-7B-Instruct, and uses a learned ranking model (Gate) to select
@@ -6,7 +6,8 @@ five candidates for a three-class evidence aggregator. The final classifier
 averages the evidence probabilities with a three-seed Chinese RoBERTa ensemble
 at equal weight. The task is SUPPORT, REFUTE, or NEI (not enough information).
 
-The project uses a deterministic, group-aware **derived** split of TrendFact
+The project uses a deterministic, group-aware **derived** split of
+[TrendFact (Zhang et al., ACL 2026)](https://aclanthology.org/2026.acl-long.1219/)
 (5,345 train, 1,147 development, 1,150 test). The original test produced:
 
 | Model | Accuracy | Macro-F1 |
@@ -15,6 +16,8 @@ The project uses a deterministic, group-aware **derived** split of TrendFact
 | Evidence branch | 0.5200 | 0.4515 |
 | Frozen fusion | 0.5783 | 0.5076 |
 
+Fusion improved Macro-F1 by 0.0428 over the claim-only ensemble
+(original paired-bootstrap 95% CI: [0.0133, 0.0711]).
 The preselected no-Gate fusion scored 0.5032 Macro-F1. The difference from the
 full fusion was statistically inconclusive, and NEI F1 decreased from 0.2779
 to 0.2645 relative to the claim model. In a later development-only diagnostic

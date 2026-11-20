@@ -16,6 +16,13 @@ from evaluation.evaluate_trendfact_final_ablations import (
     validate_preselected_alphas,
 )
 from retrieval.evidence import file_sha256
+from retrieval.score_evidence_with_llm import DEFAULT_CONFIG as SCORER_CONFIG
+
+
+def test_default_scorer_config_is_packaged_and_targets_development() -> None:
+    config = yaml.safe_load(SCORER_CONFIG.read_text(encoding="utf-8"))
+    assert config["input"]["split"] == "dev"
+    assert config["input"]["labels_visible"] is False
 
 
 def test_retrained_checkpoint_is_explicit_and_bound_to_training_report(

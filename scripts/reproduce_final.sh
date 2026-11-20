@@ -23,6 +23,21 @@ if [[ ! -e "$gate_dir/model.json" ]]; then
   cp assets/candidate_gate.json "$gate_dir/model.json"
 fi
 python src/evaluation/validate_trendfact_final_freeze.py
+selection=outputs/evaluation/trendfact_roberta_evidence_ablations
+ablation_output=outputs/evaluation/trendfact_final_preselected_ablations
+if [[ -e "$ablation_output" ]]; then
+  printf 'Ablation output already exists: %s\n' "$ablation_output" >&2
+  exit 1
+fi
+mkdir -p "$selection"
+if [[ -e "$selection/report.json" ]]; then
+  if ! cmp -s assets/dev_ablation_selection.json "$selection/report.json"; then
+    printf 'Development selection report differs from the frozen artifact: %s/report.json\n' "$selection" >&2
+    exit 1
+  fi
+else
+  cp assets/dev_ablation_selection.json "$selection/report.json"
+fi
 python src/evaluation/prepare_trendfact_final_test.py
 
 final=outputs/final/trendfact_one_shot_v1
@@ -49,12 +64,6 @@ python src/evaluation/evaluate_trendfact_final_fusion.py \
 python src/evaluation/analyze_trendfact_dev_errors.py \
   --config configs/final_test_trendfact_error_analysis.yaml \
   --output-dir "$final/error_analysis" --allow-final-test
-python src/evaluation/finalize_trendfact_final_test.py
-
-selection=outputs/evaluation/trendfact_roberta_evidence_ablations
-mkdir -p "$selection"
-if [[ ! -e "$selection/report.json" ]]; then
-  cp assets/dev_ablation_selection.json "$selection/report.json"
-fi
 python src/evaluation/evaluate_trendfact_final_ablations.py \
-  --output-dir outputs/evaluation/trendfact_final_preselected_ablations
+  --output-dir "$ablation_output"
+python src/evaluation/finalize_trendfact_final_test.py

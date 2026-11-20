@@ -1,6 +1,6 @@
 # Reproduction
 
-Run commands from the repository root. Sections 2 and 3 use Linux with Bash,
+Run commands from the repository root. Sections 2 through 5 use Linux with Bash,
 a CUDA GPU and sufficient memory for Qwen2.5-7B. The original environment was
 Python 3.10.12, PyTorch 2.7.1+cu128, Transformers 4.48.3, NumPy 2.2.6,
 scikit-learn 1.7.2 and PyArrow 25.0.0. The original BM25 environment had a
@@ -17,7 +17,10 @@ python scripts/verify_release.py
 The test suite uses small fixtures. The verification script checks archived
 configurations and the model scoring source, and recovers Accuracy and Macro-F1
 from the original aggregate confusion matrices. This verification requires no
-dataset download or GPU.
+dataset download or GPU. The scorer in this release defaults to the included
+TrendFact pilot configuration. The original scorer hash is recorded separately
+in `assets/frozen_inputs.json`. The reproduction commands select their
+configurations explicitly.
 
 ## 2 Install GPU dependencies and prepare the data
 

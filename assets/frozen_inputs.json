@@ -1,5 +1,8 @@
 {
   "scoring_source": {
+    "src/retrieval/score_evidence_with_llm.py": "01ce67540665e145bc593f984d009fca0a190d86ac48f67d8ae60fae0ca26b14"
+  },
+  "historical_scoring_source": {
     "src/retrieval/score_evidence_with_llm.py": "f7c0dd68d43831d1827553f9e2278e3ded5ea5ef9150b737a4346477051eeb66"
   },
   "derived_data": {
